@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-TODO - Login</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="login-page">
+    <div class="login-container">
+        <h1 id="form-title">Login to E-TODO</h1>
+        
+        <div id="error-message" class="error-message"></div>
+        
+        <form id="login-form">
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            
+            <button type="submit">Login</button>
+        </form>
+
+        <form id="register-form" style="display: none;">
+            <div class="form-group">
+                <label for="register-name">Name:</label>
+                <input type="text" id="register-name" name="name" required>
+            </div>
+
+            <div class="form-group">
+                <label for="register-firstname">First Name:</label>
+                <input type="text" id="register-firstname" name="firstname" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="register-email">Email:</label>
+                <input type="email" id="register-email" name="email" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="register-password">Password:</label>
+                <input type="password" id="register-password" name="password" required>
+            </div>
+            
+            <button type="submit">Register</button>
+        </form>
+
+        <div class="toggle-form">
+            <p id="toggle-text">Don't have an account? <a href="#" id="toggle-link">Register here</a></p>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3000';
+        
+        const loginForm = document.getElementById('login-form');
+        const registerForm = document.getElementById('register-form');
+        const errorMessage = document.getElementById('error-message');
+        const loginContainer = document.querySelector('.login-container');
+        const formTitle = document.getElementById('form-title');
+        const toggleText = document.getElementById('toggle-text');
+        
+        let isLoginMode = true;
+
+        // Toggle between login and register forms using event delegation
+        toggleText.addEventListener('click', (e) => {
+            if (e.target.id === 'toggle-link') {
+                e.preventDefault();
+                isLoginMode = !isLoginMode;
+                
+                // Hide error messages
+                errorMessage.style.display = 'none';
+                errorMessage.textContent = '';
+                
+                if (isLoginMode) {
+                    loginForm.style.display = 'block';
+                    registerForm.style.display = 'none';
+                    formTitle.textContent = 'Login to E-TODO';
+                    toggleText.innerHTML = '<br>Don\'t have an account? <a href="#" id="toggle-link">Register here</a>';
+                } else {
+                    loginForm.style.display = 'none';
+                    registerForm.style.display = 'block';
+                    formTitle.textContent = 'Register for E-TODO';
+                    toggleText.innerHTML = '<br>Already have an account? <a href="#" id="toggle-link">Login here</a>';
+                }
+            }
+        });
+
+        // Login form submission
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            // Hide previous error messages
+            errorMessage.style.display = 'none';
+            errorMessage.textContent = '';
+            
+            // Add loading state
+            loginContainer.classList.add('loading');
+            
+            try {
+                const response = await fetch(`${API_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Store the token in localStorage
+                    localStorage.setItem('token', data.token);
+                    
+                    // Decode token to get user ID
+                    const payload = JSON.parse(atob(data.token.split('.')[1]));
+                    localStorage.setItem('userId', payload.id);
+                    
+                    // Redirect to todos page
+                    window.location.href = 'todos.html';
+                } else {
+                    // Show error message
+                    errorMessage.textContent = data.message || 'Login failed. Please try again.';
+                    errorMessage.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                errorMessage.textContent = 'Connection error. Please make sure the server is running.';
+                errorMessage.style.display = 'block';
+            } finally {
+                // Remove loading state
+                loginContainer.classList.remove('loading');
+            }
+        });
+
+        // Register form submission
+        registerForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const name = document.getElementById('register-name').value;
+            const firstname = document.getElementById('register-firstname').value;
+            const email = document.getElementById('register-email').value;
+            const password = document.getElementById('register-password').value;
+            
+            // Hide previous error messages
+            errorMessage.style.display = 'none';
+            errorMessage.textContent = '';
+            
+            // Add loading state
+            loginContainer.classList.add('loading');
+            
+            try {
+                const response = await fetch(`${API_URL}/auth/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ name, firstname, email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    // Store the token in localStorage
+                    localStorage.setItem('token', data.token);
+                    
+                    // Decode token to get user ID
+                    const payload = JSON.parse(atob(data.token.split('.')[1]));
+                    localStorage.setItem('userId', payload.id);
+                    
+                    // Redirect to todos page
+                    window.location.href = 'todos.html';
+                } else {
+                    // Show error message
+                    errorMessage.textContent = data.message || 'Registration failed. Please try again.';
+                    errorMessage.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Registration error:', error);
+                errorMessage.textContent = 'Connection error. Please make sure the server is running.';
+                errorMessage.style.display = 'block';
+            } finally {
+                // Remove loading state
+                loginContainer.classList.remove('loading');
+            }
+        });
+        
+        // Check if user is already logged in
+        window.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('token');
+            const userId = localStorage.getItem('userId');
+            if (token && userId) {
+                // Verify token is still valid by making a test request
+                fetch(`${API_URL}/users/${userId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        window.location.href = 'todos.html';
+                    } else {
+                        // Token is invalid, remove it
+                        localStorage.removeItem('token');
+                        localStorage.removeItem('userId');
+                    }
+                })
+                .catch(() => {
+                    // Network error, stay on login page
+                });
+            }
+        });
+    </script>
+</body>
+</html>
